@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String   @id @default(uuid())
+  email    String   @unique
+  password String
+  diskSpace Int @default(104857600)
+  usedSpace Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  directories Directory[]
+  files File[]
+}
+
+model Directory {
+  id String @id @default(uuid())
+  name String
+  path String
+  size Int @default(0)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String
+  parentId String?
+  parent   Directory?   @relation("ParentChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Directory[]  @relation("ParentChildren")
+  files File[]
+  @@unique([ownerId, name, parentId])
+}
+
+model File {
+  id String @id @default(uuid())
+  name String 
+  type Types @default(download)
+  path String
+  size Int
+  directory Directory? @relation(fields: [directoryId], references: [id], onDelete: Cascade)
+  directoryId String?
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String
+  @@unique([ownerId, name, directoryId])
+}
+
+enum Types {
+  image
+  video
+  audio
+  text
+  download
+}
